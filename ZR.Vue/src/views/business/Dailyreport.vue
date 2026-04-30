@@ -364,6 +364,7 @@ import {
   updateDailyreport,
   getDailyreport,
 } from '@/api/business/dailyreport.js';
+import { listSelproject } from '@/api/business/selproject.js';
 import * as XLSX from 'xlsx';
 
 export default {
@@ -426,13 +427,13 @@ export default {
       rules: {
        
       },
-      // 项目数据源（从Excel导入）
+      // 项目数据源（从数据库加载）
       projectDataSource: [],
       // 医院列表（去重后）
       hospitalList: [],
       // 项目映射表（医院->项目列表）
       hospitalProjectMap: {},
-      // Excel文件加载状态
+      // 项目数据加载状态
       excelLoading: false,
       // 日报导出对话框
       reportDialogVisible: false,
@@ -453,8 +454,8 @@ export default {
   created() {    
     // 设置默认查询时间为本周一到周日
     this.setDefaultWeekRange();
-    // 动态加载Excel项目数据
-    this.loadExcelData();
+    // 从数据库加载项目数据
+    this.loadProjectData();
     // 列表数据查询
     this.getList();
 
@@ -510,99 +511,28 @@ export default {
          }
        })
     },
-    // 动态加载Excel文件数据
-    async loadExcelData() {
+    // 从数据库加载项目数据
+    async loadProjectData() {
       try {
         this.excelLoading = true;
-        // 从远程或本地加载Excel文件
-        const excelUrl = 'http://172.18.100.207:9100/weeknote/weeknoteproject.xlsx?v=' + new Date().getTime();
-        
-        const response = await fetch(excelUrl);
-        if (!response.ok) {
-          throw new Error('无法加载Excel文件');
+        const res = await listSelproject({ pageNum: 1, pageSize: 9999 });
+        if (res.code == 200 && res.data && res.data.result) {
+          this.projectDataSource = res.data.result
+            .filter(item => item.hospitalName && item.code && item.name)
+            .map(item => ({
+              hospital: item.hospitalName.trim(),
+              projectId: item.code.trim(),
+              projectName: item.name.trim()
+            }));
+          this.buildHospitalProjectMap();
+          console.log('项目数据加载成功，共加载', this.projectDataSource.length, '条');
         }
-        
-        const arrayBuffer = await response.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        
-        // 读取「合同名称统一表」和「已完结合同」两个sheet
-        const sheetConfigs = [
-          {
-            name: '合同名称统一表',
-            hospitalCol: 1,    // 医院列索引
-            projectIdCol: 4,   // 项目编号列索引
-            projectNameCol: 5  // 项目名称列索引
-          },
-          {
-            name: '已完结合同',
-            hospitalCol: 1,    // 医院列索引
-            projectIdCol: 3,   // 项目编号列索引（第4列）
-            projectNameCol: 4  // 项目名称列索引（第5列）
-          }
-        ];
-        
-        // 解析数据（跳过前2行标题）
-        this.projectDataSource = [];
-        
-        // 遍历两个sheet配置
-        sheetConfigs.forEach(config => {
-          if (!workbook.SheetNames.includes(config.name)) {
-            console.warn('未找到工作表：' + config.name);
-            return;
-          }
-          
-          const worksheet = workbook.Sheets[config.name];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-          
-          // 解析数据（跳过前2行标题）
-          for (let i = 2; i < jsonData.length; i++) {
-            const row = jsonData[i];
-            if (!row || row.length < Math.max(config.hospitalCol, config.projectIdCol, config.projectNameCol) + 1) continue;
-            
-            const hospital = row[config.hospitalCol];         // 医院列
-            const projectId = row[config.projectIdCol];       // 项目编号列
-            const projectName = row[config.projectNameCol];   // 项目名称列
-            
-            // 过滤空数据和无效数据
-            if (hospital && projectId && projectName && 
-                String(hospital).trim() !== '' && 
-                String(projectId).trim() !== '' && 
-                String(projectName).trim() !== '') {
-              this.projectDataSource.push({
-                hospital: String(hospital).trim(),
-                projectId: String(projectId).trim(),
-                projectName: String(projectName).trim(),
-                source: config.name // 标记数据来源
-              });
-            }
-          }
-        });
-        
-        // 构建医院列表和映射关系
-        this.buildHospitalProjectMap();
-        
-        console.log('Excel数据加载成功，共加载', this.projectDataSource.length, '条项目数据');
-        this.msgSuccess('项目数据加载成功');
       } catch (error) {
-        console.error('加载Excel数据失败:', error);
+        console.error('加载项目数据失败:', error);
         this.msgError('加载项目数据失败: ' + error.message);
-        // 失败时使用默认数据
-        this.initProjectDataFallback();
       } finally {
         this.excelLoading = false;
       }
-    },
-    // 备用：初始化默认项目数据 
-    initProjectDataFallback() {
-      // 这里是从Excel「合同名称统一表」sheet中提取的数据（备用）
-      this.projectDataSource = [
-        { hospital: '公司本部', projectId: '220000', projectName: '公共项目' },
-        { hospital: '公司本部', projectId: '281900', projectName: '事业群公共项目' },
-        { hospital: '深圳市人民医院', projectId: '652000', projectName: '银医合作项目采购合同书（幸福深医平台）' },
-        { hospital: '深圳市人民医院', projectId: 'XYS250505', projectName: '财务+药学公众号优化需求' },
-      ];
-      // 构建医院列表和映射关系
-      this.buildHospitalProjectMap();
     },
     // 构建医院-项目映射关系
     buildHospitalProjectMap() {
