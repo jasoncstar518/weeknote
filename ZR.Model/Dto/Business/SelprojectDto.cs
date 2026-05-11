@@ -19,9 +19,7 @@ namespace ZR.Model.Dto
         public string Remarks { get; set; }
         public long? CreatedBy { get; set; }
         public long? UpdatedBy { get; set; }
-        [Required(ErrorMessage = "创建时间不能为空")]
         public DateTime? CreationTime { get; set; }
-        [Required(ErrorMessage = "修改时间不能为空")]
         public DateTime? UpdateTime { get; set; }
         public byte IsDeleted { get; set; }
     }

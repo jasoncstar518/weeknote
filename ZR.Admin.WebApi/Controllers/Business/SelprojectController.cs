@@ -4,12 +4,13 @@ using Infrastructure.Enums;
 using Infrastructure.Model;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
-using ZR.Model.Dto;
-using ZR.Model.Models;
-using ZR.Service.Business.IBusinessService;
+using System;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Admin.WebApi.Filters;
 using ZR.Common;
+using ZR.Model.Dto;
+using ZR.Model.Models;
+using ZR.Service.Business.IBusinessService;
 
 namespace ZR.Admin.WebApi.Controllers
 {
@@ -75,9 +76,14 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("请求参数错误");
             }
+            long userId = HttpContext.GetUId();
+            parm.CreatedBy = userId;
+            parm.CreationTime = DateTimeHelper.GetBeginTime(DateTime.Now);
+            parm.UpdatedBy = userId;
+            parm.UpdateTime = DateTimeHelper.GetBeginTime(DateTime.Now);
+            parm.IsDeleted = 0;
             //从 Dto 映射到 实体
             var modal = parm.Adapt<Selproject>().ToCreate(HttpContext);
-
             var response = _SelprojectService.AddSelproject(modal);
 
             return ToResponse(response);
