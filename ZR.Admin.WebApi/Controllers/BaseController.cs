@@ -1,4 +1,4 @@
-﻿using Infrastructure;
+using Infrastructure;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -123,10 +123,10 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 // 添加worksheet
                 ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(sheetName);
-                //单元格自动适应大小
-                worksheet.Cells.Style.ShrinkToFit = true;
                 //全部字段导出
                 worksheet.Cells.LoadFromCollection(list, true, OfficeOpenXml.Table.TableStyles.Light13);
+                //自动调整列宽以适应内容
+                worksheet.Cells.AutoFitColumns();
                 package.Save();
             }
 
