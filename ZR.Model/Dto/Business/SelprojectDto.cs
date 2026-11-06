@@ -29,5 +29,19 @@ namespace ZR.Model.Dto
     /// </summary>
     public class SelprojectQueryDto : PagerInfo 
     {
+        /// <summary>
+        /// 项目编码
+        /// </summary>
+        public string Code { get; set; }
+
+        /// <summary>
+        /// 项目名称
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// 所属医院
+        /// </summary>
+        public string HospitalName { get; set; }
     }
 }

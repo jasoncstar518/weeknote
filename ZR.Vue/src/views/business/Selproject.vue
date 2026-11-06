@@ -11,7 +11,19 @@
     <!-- :model属性用于表单验证使用 比如下面的el-form-item 的 prop属性用于对表单值进行验证操作 -->
     <el-form :model="queryParams" size="small" label-position="right" inline ref="queryForm" :label-width="labelWidth" v-show="showSearch" 
       @submit.native.prevent>
-      
+     
+      <el-form-item label="项目编码" prop="code">
+        <el-input v-model="queryParams.code" placeholder="请输入项目编码" clearable @keyup.enter.native="handleQuery" />
+      </el-form-item>
+
+      <el-form-item label="项目名称" prop="name">
+        <el-input v-model="queryParams.name" placeholder="请输入项目名称" clearable @keyup.enter.native="handleQuery" />
+      </el-form-item>
+
+      <el-form-item label="所属医院" prop="hospitalName">
+        <el-input v-model="queryParams.hospitalName" placeholder="请输入所属医院" clearable @keyup.enter.native="handleQuery" />
+      </el-form-item>
+
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -160,6 +172,9 @@ export default {
         pageSize: 10,
         sort: undefined,
         sortType: undefined,
+        code: undefined,
+        name: undefined,
+        hospitalName: undefined,
       },
       // 弹出层标题
       title: "",
@@ -243,6 +258,9 @@ export default {
     resetQuery() {
       this.timeRange = [];
       this.resetForm("queryForm");
+      this.queryParams.code = undefined;
+      this.queryParams.name = undefined;
+      this.queryParams.hospitalName = undefined;
       this.handleQuery();
     },
     // 多选框选中数据
